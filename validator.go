@@ -1,523 +1,298 @@
 package validator
 
-//go:generate mockery -name Validator -output mock_validator
-
 import (
-    "regexp"
-    "strings"
-    "time"
-    "unicode/utf8"
+	"fmt"
+	"regexp"
+	"unicode/utf8"
 
-    "github.com/onedaycat/errors"
-
-    "fmt"
+	"github.com/onedaycat/errors"
 )
 
 var (
-    emptyStr          = ""
-    emailPatern       = regexp.MustCompile(".+@.+\\..+")
-    dateiso8601Patern = regexp.MustCompile("^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})(Z|(\\+|-)\\d{2}(:?\\d{2})?)$")
+	emptyStr          = ""
+	emailPatern       = regexp.MustCompile("^[A-Z0-9._%-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}$")
+	dateiso8601Patern = regexp.MustCompile("^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})(Z|([+\\-])\\d{2}(:?\\d{2})?)$")
 )
 
 type ValidateError struct {
-    Name string
-    Err  error
+	Name string
+	Err  error
 }
 
+type Pointer interface{}
+
+//go:generate mockery -name Validator
 type Validator interface {
-    HasError() bool
-    Messages() map[string]string
-    GetError() errors.Error
-    GetMsg() string
-    Wrap(errors.Error) errors.Error
-    AddError(name string, err errors.Error)
-    AddErrorMsg(name, format string, args ...interface{})
-    NotNil(val interface{}, name string, err ...errors.Error)
-    Email(val string, name string, err ...errors.Error)
-    Gender(val string, name string, err ...errors.Error)
-    Confirm(val, confirm string, name string, confirmName string, err ...errors.Error)
-    ISO8601DataTime(val string, name string, err ...errors.Error)
-    InString(val string, in []string, name string, err ...errors.Error)
-    RequiredString(val string, name string, err ...errors.Error)
-    RequiredBytes(val []byte, name string, err ...errors.Error)
-    RequiredInt(val int, name string, err ...errors.Error)
-    RequiredInt32(val int32, name string, err ...errors.Error)
-    RequiredInt64(val int64, name string, err ...errors.Error)
-    RequiredFloat32(val float32, name string, err ...errors.Error)
-    RequiredFloat64(val float64, name string, err ...errors.Error)
-    RequiredBool(val bool, name string, err ...errors.Error)
-    RequiredEmail(val string, name string, err ...errors.Error)
-    RequiredTime(val time.Time, name string, err ...errors.Error)
-    RequiredArrayString(val []string, name string, err ...errors.Error)
-    MinChar(val string, n int, name string, err ...errors.Error)
-    MinInt(val int, n int, name string, err ...errors.Error)
-    MinInt32(val int32, n int32, name string, err ...errors.Error)
-    MinInt64(val int64, n int64, name string, err ...errors.Error)
-    MinFloat32(val float32, n float32, name string, err ...errors.Error)
-    MinFloat64(val float64, n float64, name string, err ...errors.Error)
-    MaxChar(val string, n int, name string, err ...errors.Error)
-    MaxInt(val int, n int, name string, err ...errors.Error)
-    MaxInt32(val int32, n int32, name string, err ...errors.Error)
-    MaxInt64(val int64, n int64, name string, err ...errors.Error)
-    MaxFloat32(val float32, n float32, name string, err ...errors.Error)
-    MaxFloat64(val float64, n float64, name string, err ...errors.Error)
-    RangeInt(val, min, max int, name string, err ...errors.Error)
-    RangeInt32(val, min, max int32, name string, err ...errors.Error)
-    RangeInt64(val, min, max int64, name string, err ...errors.Error)
-    RangeFloat32(val, min, max float32, name string, err ...errors.Error)
-    RangeFloat64(val, min, max float64, name string, err ...errors.Error)
-    LenArrayString(val []string, nLen int, name string, err ...errors.Error)
-    LenArrayInt(val []int, nLen int, name string, err ...errors.Error)
-    LenArrayInt32(val []int32, nLen int, name string, err ...errors.Error)
-    LenArrayInt64(val []int64, nLen int, name string, err ...errors.Error)
-    LenArrayFloat32(val []float32, nLen int, name string, err ...errors.Error)
-    LenArrayFloat64(val []float64, nLen int, name string, err ...errors.Error)
-    PointerRequiredEmail(val *string, name string, err ...errors.Error)
-    PointerRequiredString(val *string, name string, err ...errors.Error)
-    PointerRequiredInt(val *int, name string, err ...errors.Error)
-    PointerRequiredInt32(val *int32, name string, err ...errors.Error)
-    PointerRequiredInt64(val *int64, name string, err ...errors.Error)
-    PointerRequiredFloat32(val *float32, name string, err ...errors.Error)
-    PointerRequiredFloat64(val *float64, name string, err ...errors.Error)
-    PointerRequiredBool(val *bool, name string, err ...errors.Error)
-    PointerRangeInt(val *int, min, max int, name string, err ...errors.Error)
-    PointerRangeInt32(val *int32, min, max int32, name string, err ...errors.Error)
-    PointerRangeInt64(val *int64, min, max int64, name string, err ...errors.Error)
-    PointerRangeFloat32(val *float32, min, max float32, name string, err ...errors.Error)
-    PointerRangeFloat64(val *float64, min, max float64, name string, err ...errors.Error)
+	IsValid() bool
+	HasError() bool
+	GetError() error
+	Wrap(errors.Error) errors.Error
+	SetError(msg string)
+
+	Required(name string, val Pointer, msg ...interface{})
+	NotEmptyString(name string, val string, msg ...interface{})
+	NotEmptyInt(name string, val int, msg ...interface{})
+	NotEmptyInt64(name string, val int64, msg ...interface{})
+	NotEmptyFloat64(name string, val float64, msg ...interface{})
+	NotEmptyBool(name string, val bool, msg ...interface{})
+	Confirm(name string, val interface{}, confirmName string, confirmValue interface{}, msg ...interface{})
+	MaxInt(name string, val int, max int, msg ...interface{})
+	MaxInt64(name string, val int64, max int64, msg ...interface{})
+	MaxFloat64(name string, val float64, max float64, msg ...interface{})
+	MaxString(name string, val string, max int, msg ...interface{})
+	MinInt(name string, val int, min int, msg ...interface{})
+	MinInt64(name string, val int64, min int64, msg ...interface{})
+	MinFloat64(name string, val float64, min float64, msg ...interface{})
+	MinString(name string, val string, min int, msg ...interface{})
+	EqualString(name string, val string, size int, msg ...interface{})
+	EqualInt(name string, val int, equal int, msg ...interface{})
+	RangeInt(name string, val int, min, max int, msg ...interface{})
+	RangeString(name string, val string, min, max int, msg ...interface{})
+	RangeInt64(name string, val int64, min, max int64, msg ...interface{})
+	RangeFloat64(name string, val float64, min, max float64, msg ...interface{})
+	InString(name string, val string, list []string, msg ...interface{})
+	InInt(name string, val int, list []int, msg ...interface{})
+	InInt64(name string, val int64, list []int64, msg ...interface{})
+	InFloat64(name string, val float64, list []float64, msg ...interface{})
+	Email(name string, val string, msg ...interface{})
+	ISO8601DataTime(name string, val string, msg ...interface{})
 }
 
 type validator struct {
-    errs []ValidateError
+	isError    bool
+	errMessage string
 }
 
 func New() Validator {
-    return &validator{
-        errs: []ValidateError{},
-    }
+	return &validator{}
+}
+
+func (v *validator) IsValid() bool {
+	return !v.isError
 }
 
 func (v *validator) HasError() bool {
-    if len(v.errs) > 0 {
-        return true
-    }
-
-    return false
+	return v.isError
 }
-func (v *validator) Messages() map[string]string {
-    msgs := make(map[string]string)
-    for i := 0; i < len(v.errs); i++ {
-        if v.errs[i].Name != "" {
-            msgs[v.errs[i].Name] = v.errs[i].Err.Error()
-        }
-    }
 
-    return msgs
+func (v *validator) GetError() error {
+	return errors.New(v.errMessage)
 }
-func (v *validator) GetError() errors.Error {
-    if len(v.errs) > 0 {
-        return errors.BadRequest(emptyStr, v.errs[0].Err.Error())
-    }
 
-    return nil
-}
-func (v *validator) GetMsg() string {
-    if len(v.errs) > 0 {
-        return v.errs[0].Err.Error()
-    }
-
-    return emptyStr
-}
 func (v *validator) Wrap(err errors.Error) errors.Error {
-    if len(v.errs) > 0 {
-        return err.WithMessage(v.errs[0].Err.Error())
-    }
+	if v.isError {
+		return err.WithMessage(v.errMessage)
+	}
 
-    return nil
-}
-func (v *validator) add(name string, err error, errs []errors.Error) {
-    if len(errs) > 0 {
-        err = errs[0]
-    }
-
-    v.errs = append(v.errs, ValidateError{name, err})
-}
-func (v *validator) AddError(name string, err errors.Error) {
-    v.errs = append(v.errs, ValidateError{name, err})
-}
-func (v *validator) AddErrorMsg(name, format string, args ...interface{}) {
-    v.errs = append(v.errs, ValidateError{name, fmt.Errorf(format, args...)})
+	return nil
 }
 
-func (v *validator) NotNil(val interface{}, name string, err ...errors.Error) {
-    if val == nil {
-        defaultErr := fmt.Errorf("%s is required", name)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) Email(val string, name string, err ...errors.Error) {
-    if val == "" {
-        return
-    }
-    if !emailPatern.MatchString(val) {
-        defaultErr := fmt.Errorf("%s invalid email format", name)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) Gender(val string, name string, err ...errors.Error) {
-    if val != `male` && val != `female` {
-        defaultErr := fmt.Errorf("%s should be male or female", name)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) Confirm(val, confirm string, name string, confirmName string, err ...errors.Error) {
-    if val != confirm {
-        defaultErr := fmt.Errorf("%s is not matched %s", name, confirmName)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) ISO8601DataTime(val string, name string, err ...errors.Error) {
-    if val == "" {
-        return
-    }
-    if !dateiso8601Patern.MatchString(val) {
-        defaultErr := fmt.Errorf("%s is invalid date format", name)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) InString(val string, in []string, name string, err ...errors.Error) {
-    for _, k := range in {
-        if k == val {
-            return
-        }
-    }
-
-    defaultErr := fmt.Errorf("%s is not in", strings.Join(in, ","))
-    v.add(name, defaultErr, err)
+func (v *validator) SetError(msg string) {
+	v.isError = true
+	v.errMessage = msg
 }
 
-func (v *validator) RequiredString(val string, name string, err ...errors.Error) {
-    if len(strings.TrimSpace(val)) == 0 {
-        defaultErr := fmt.Errorf("%s is required", name)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) RequiredBytes(val []byte, name string, err ...errors.Error) {
-    if len(val) == 0 {
-        defaultErr := fmt.Errorf("%s is required", name)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) RequiredInt(val int, name string, err ...errors.Error) {
-    if val == 0 {
-        defaultErr := fmt.Errorf("%s is required", name)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) RequiredInt32(val int32, name string, err ...errors.Error) {
-    if val == 0 {
-        defaultErr := fmt.Errorf("%s is required", name)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) RequiredInt64(val int64, name string, err ...errors.Error) {
-    if val == 0 {
-        defaultErr := fmt.Errorf("%s is required", name)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) RequiredFloat32(val float32, name string, err ...errors.Error) {
-    if val == 0 {
-        defaultErr := fmt.Errorf("%s is required", name)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) RequiredFloat64(val float64, name string, err ...errors.Error) {
-    if val == 0 {
-        defaultErr := fmt.Errorf("%s is required", name)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) RequiredBool(val bool, name string, err ...errors.Error) {
-    if !val {
-        defaultErr := fmt.Errorf("%s is required", name)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) RequiredEmail(val string, name string, err ...errors.Error) {
-    if val == "" {
-        defaultErr := fmt.Errorf("%s is required", name)
-        v.add(name, defaultErr, err)
-    }
-
-    v.Email(val, name, err...)
-}
-func (v *validator) RequiredTime(val time.Time, name string, err ...errors.Error) {
-    if val.IsZero() {
-        defaultErr := fmt.Errorf("%s is required", name)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) RequiredArrayString(val []string, name string, err ...errors.Error) {
-    if len(val) == 0 {
-        defaultErr := fmt.Errorf("%s is required", name)
-        v.add(name, defaultErr, err)
-    }
+func (v *validator) setErr(msg string, customMsg []interface{}) {
+	v.isError = true
+	if len(customMsg) > 0 {
+		v.errMessage = fmt.Sprint(customMsg...)
+	} else {
+		v.errMessage = msg
+	}
 }
 
-func (v *validator) MinChar(val string, n int, name string, err ...errors.Error) {
-    if utf8.RuneCountInString(val) < n {
-        defaultErr := fmt.Errorf("%s should be atleast %d character", name, n)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) MinInt(val int, n int, name string, err ...errors.Error) {
-    if val > n {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s should be atleast %d", name, n)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) MinInt32(val int32, n int32, name string, err ...errors.Error) {
-    if val > n {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s should be atleast %d", name, n)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) MinInt64(val int64, n int64, name string, err ...errors.Error) {
-    if val > n {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s should be atleast %d", name, n)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) MinFloat32(val float32, n float32, name string, err ...errors.Error) {
-    if val < n {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s should be atleast %v", name, n)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) MinFloat64(val float64, n float64, name string, err ...errors.Error) {
-    if val < n {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s should be atleast %v", name, n)
-    v.add(name, defaultErr, err)
+func (v *validator) Required(name string, val Pointer, msg ...interface{}) {
+	if val == nil {
+		v.setErr(fmt.Sprintf("%s is required", name), msg)
+	}
 }
 
-func (v *validator) MaxChar(val string, n int, name string, err ...errors.Error) {
-    if utf8.RuneCountInString(val) > n {
-        defaultErr := fmt.Errorf("%s should not greater than %d character", name, n)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) MaxInt(val int, n int, name string, err ...errors.Error) {
-    if val > n {
-        defaultErr := fmt.Errorf("%s should not greater than %d", name, n)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) MaxInt32(val int32, n int32, name string, err ...errors.Error) {
-    if val > n {
-        defaultErr := fmt.Errorf("%s should not greater than %d", name, n)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) MaxInt64(val int64, n int64, name string, err ...errors.Error) {
-    if val > n {
-        defaultErr := fmt.Errorf("%s should not greater than %d", name, n)
-        v.add(name, defaultErr, err)
-    }
-}
-func (v *validator) MaxFloat32(val float32, n float32, name string, err ...errors.Error) {
-    if val > n {
-        return
-    }
-    defaultErr := fmt.Errorf("%s should not greater than %v", name, n)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) MaxFloat64(val float64, n float64, name string, err ...errors.Error) {
-    if val > n {
-        return
-    }
-    defaultErr := fmt.Errorf("%s should not greater than %v", name, n)
-    v.add(name, defaultErr, err)
+func (v *validator) NotEmptyString(name string, val string, msg ...interface{}) {
+	if val == emptyStr {
+		v.setErr(fmt.Sprintf("%s must not empty", name), msg)
+	}
 }
 
-func (v *validator) RangeInt(val, min, max int, name string, err ...errors.Error) {
-    if val >= min && val <= max {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s is out of range", name)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) RangeInt32(val, min, max int32, name string, err ...errors.Error) {
-    if val >= min && val <= max {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s is out of range", name)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) RangeInt64(val, min, max int64, name string, err ...errors.Error) {
-    if val >= min && val <= max {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s is out of range", name)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) RangeFloat32(val, min, max float32, name string, err ...errors.Error) {
-    if val >= min && val <= max {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s is out of range", name)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) RangeFloat64(val, min, max float64, name string, err ...errors.Error) {
-    if val >= min && val <= max {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s is out of range", name)
-    v.add(name, defaultErr, err)
+func (v *validator) NotEmptyInt(name string, val int, msg ...interface{}) {
+	if val == 0 {
+		v.setErr(fmt.Sprintf("%s must not 0", name), msg)
+	}
 }
 
-func (v *validator) LenArrayString(val []string, nLen int, name string, err ...errors.Error) {
-    if len(val) == nLen {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s must len equal to %d", name, nLen)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) LenArrayInt(val []int, nLen int, name string, err ...errors.Error) {
-    if len(val) == nLen {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s must len equal to %d", name, nLen)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) LenArrayInt32(val []int32, nLen int, name string, err ...errors.Error) {
-    if len(val) == nLen {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s must len equal to %d", name, nLen)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) LenArrayInt64(val []int64, nLen int, name string, err ...errors.Error) {
-    if len(val) == nLen {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s must len equal to %d", name, nLen)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) LenArrayFloat32(val []float32, nLen int, name string, err ...errors.Error) {
-    if len(val) == nLen {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s must len equal to %d", name, nLen)
-    v.add(name, defaultErr, err)
-}
-func (v *validator) LenArrayFloat64(val []float64, nLen int, name string, err ...errors.Error) {
-    if len(val) == nLen {
-        return
-    }
-
-    defaultErr := fmt.Errorf("%s must len equal to %d", name, nLen)
-    v.add(name, defaultErr, err)
+func (v *validator) NotEmptyInt64(name string, val int64, msg ...interface{}) {
+	if val == 0 {
+		v.setErr(fmt.Sprintf("%s must not 0", name), msg)
+	}
 }
 
-func (v *validator) PointerRequiredString(val *string, name string, err ...errors.Error) {
-    if val != nil {
-        v.RequiredString(*val, name)
-    }
+func (v *validator) NotEmptyFloat64(name string, val float64, msg ...interface{}) {
+	if val == 0 {
+		v.setErr(fmt.Sprintf("%s must not 0", name), msg)
+	}
 }
-func (v *validator) PointerRequiredEmail(val *string, name string, err ...errors.Error) {
-    if val != nil {
-        v.RequiredString(*val, name)
-    }
-}
-func (v *validator) PointerRequiredInt(val *int, name string, err ...errors.Error) {
-    if val != nil {
-        v.RequiredInt(*val, name)
-    }
-}
-func (v *validator) PointerRequiredInt32(val *int32, name string, err ...errors.Error) {
-    if val != nil {
-        v.RequiredInt32(*val, name)
-    }
-}
-func (v *validator) PointerRequiredInt64(val *int64, name string, err ...errors.Error) {
-    if val != nil {
-        v.RequiredInt64(*val, name)
-    }
-}
-func (v *validator) PointerRequiredFloat64(val *float64, name string, err ...errors.Error) {
-    if val != nil {
-        v.RequiredFloat64(*val, name)
-    }
-}
-func (v *validator) PointerRequiredFloat32(val *float32, name string, err ...errors.Error) {
-    if val != nil {
-        v.RequiredFloat32(*val, name)
-    }
-}
-func (v *validator) PointerRequiredBool(val *bool, name string, err ...errors.Error) {
-    if val != nil {
-        v.RequiredBool(*val, name)
-    }
-}
-func (v *validator) PointerRangeInt(val *int, min, max int, name string, err ...errors.Error) {
-    if val == nil || (*val >= min && *val <= max) {
-        return
-    }
 
-    defaultErr := fmt.Errorf("%s is out of range", name)
-    v.add(name, defaultErr, err)
+func (v *validator) NotEmptyBool(name string, val bool, msg ...interface{}) {
+	if !val {
+		v.setErr(fmt.Sprintf("%s must not be false", name), msg)
+	}
 }
-func (v *validator) PointerRangeInt32(val *int32, min, max int32, name string, err ...errors.Error) {
-    if val == nil || *val >= min && *val <= max {
-        return
-    }
 
-    defaultErr := fmt.Errorf("%s is out of range", name)
-    v.add(name, defaultErr, err)
+func (v *validator) Confirm(name string, val interface{}, confirmName string, confirmValue interface{}, msg ...interface{}) {
+	if val != confirmValue {
+		v.setErr(fmt.Sprintf("%s value must equal to %s", name, confirmName), msg)
+	}
 }
-func (v *validator) PointerRangeInt64(val *int64, min, max int64, name string, err ...errors.Error) {
-    if val == nil || *val >= min && *val <= max {
-        return
-    }
 
-    defaultErr := fmt.Errorf("%s is out of range", name)
-    v.add(name, defaultErr, err)
+func (v *validator) MaxInt(name string, val int, max int, msg ...interface{}) {
+	if val > max {
+		v.setErr(fmt.Sprintf("%s must not more than %d", name, max), msg)
+	}
 }
-func (v *validator) PointerRangeFloat32(val *float32, min, max float32, name string, err ...errors.Error) {
-    if val == nil || *val >= min && *val <= max {
-        return
-    }
 
-    defaultErr := fmt.Errorf("%s is out of range", name)
-    v.add(name, defaultErr, err)
+func (v *validator) MaxInt64(name string, val int64, max int64, msg ...interface{}) {
+	if val > max {
+		v.setErr(fmt.Sprintf("%s must not more than %d", name, max), msg)
+	}
 }
-func (v *validator) PointerRangeFloat64(val *float64, min, max float64, name string, err ...errors.Error) {
-    if val == nil || *val >= min && *val <= max {
-        return
-    }
 
-    defaultErr := fmt.Errorf("%s is out of range", name)
-    v.add(name, defaultErr, err)
+func (v *validator) MaxFloat64(name string, val float64, max float64, msg ...interface{}) {
+	if val > max {
+		v.setErr(fmt.Sprintf("%s must not more than %v", name, max), msg)
+	}
+}
+
+func (v *validator) MaxString(name string, val string, max int, msg ...interface{}) {
+	if utf8.RuneCountInString(val) > max {
+		v.setErr(fmt.Sprintf("%s must not more than %d characters", name, max), msg)
+	}
+}
+
+func (v *validator) MinInt(name string, val int, min int, msg ...interface{}) {
+	if val > min {
+		v.setErr(fmt.Sprintf("%s must not less than %d", name, min), msg)
+	}
+}
+
+func (v *validator) MinInt64(name string, val int64, min int64, msg ...interface{}) {
+	if val > min {
+		v.setErr(fmt.Sprintf("%s must not less than %d", name, min), msg)
+	}
+}
+
+func (v *validator) MinFloat64(name string, val float64, min float64, msg ...interface{}) {
+	if val > min {
+		v.setErr(fmt.Sprintf("%s must not less than %v", name, min), msg)
+	}
+}
+
+func (v *validator) MinString(name string, val string, min int, msg ...interface{}) {
+	if utf8.RuneCountInString(val) < min {
+		v.setErr(fmt.Sprintf("%s must not more than %d characters", name, min), msg)
+	}
+}
+
+func (v *validator) EqualString(name string, val string, size int, msg ...interface{}) {
+	if utf8.RuneCountInString(val) != size {
+		v.setErr(fmt.Sprintf("%s must equal %d characters", name, size), msg)
+	}
+}
+
+func (v *validator) EqualInt(name string, val int, equal int, msg ...interface{}) {
+	if val != equal {
+		v.setErr(fmt.Sprintf("%s must equal %d", name, equal), msg)
+	}
+}
+
+func (v *validator) RangeInt(name string, val int, min, max int, msg ...interface{}) {
+	if val >= min && val <= max {
+		return
+	}
+
+	v.setErr(fmt.Sprintf("%s must in range %d and %d", name, min, max), msg)
+}
+
+func (v *validator) RangeString(name string, val string, min, max int, msg ...interface{}) {
+	steLen := utf8.RuneCountInString(val)
+	if steLen >= min && steLen <= max {
+		return
+	}
+
+	v.setErr(fmt.Sprintf("%s must in range %d and %d characters", name, min, max), msg)
+}
+
+func (v *validator) RangeInt64(name string, val int64, min, max int64, msg ...interface{}) {
+	if val >= min && val <= max {
+		return
+	}
+
+	v.setErr(fmt.Sprintf("%s must in range %d and %d", name, min, max), msg)
+}
+
+func (v *validator) RangeFloat64(name string, val float64, min, max float64, msg ...interface{}) {
+	if val >= min && val <= max {
+		return
+	}
+
+	v.setErr(fmt.Sprintf("%s must in range %v and %v", name, min, max), msg)
+}
+
+func (v *validator) InString(name string, val string, list []string, msg ...interface{}) {
+	for _, k := range list {
+		if k == val {
+			return
+		}
+	}
+
+	v.setErr(fmt.Sprintf("%s must be in %v", name, list), msg)
+}
+
+func (v *validator) InInt(name string, val int, list []int, msg ...interface{}) {
+	for _, k := range list {
+		if k == val {
+			return
+		}
+	}
+
+	v.setErr(fmt.Sprintf("%s must be in %v", name, list), msg)
+}
+
+func (v *validator) InInt64(name string, val int64, list []int64, msg ...interface{}) {
+	for _, k := range list {
+		if k == val {
+			return
+		}
+	}
+
+	v.setErr(fmt.Sprintf("%s must be in %v", name, list), msg)
+}
+
+func (v *validator) InFloat64(name string, val float64, list []float64, msg ...interface{}) {
+	for _, k := range list {
+		if k == val {
+			return
+		}
+	}
+
+	v.setErr(fmt.Sprintf("%s must be in %v", name, list), msg)
+}
+
+func (v *validator) Email(val string, name string, msg ...interface{}) {
+	if val == emptyStr {
+		v.setErr(fmt.Sprintf("%s must be email format", name), msg)
+		return
+	}
+
+	if !emailPatern.MatchString(val) {
+		v.setErr(fmt.Sprintf("%s must be email format", name), msg)
+	}
+}
+
+func (v *validator) ISO8601DataTime(val string, name string, msg ...interface{}) {
+	if val == emptyStr {
+		v.setErr(fmt.Sprintf("%s must be iso8601 date time format", name), msg)
+	}
+
+	if !dateiso8601Patern.MatchString(val) {
+		v.setErr(fmt.Sprintf("%s must be iso8601 date time format", name), msg)
+	}
 }
