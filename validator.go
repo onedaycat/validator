@@ -27,7 +27,7 @@ type Validator interface {
 	Wrap(errors.Error) errors.Error
 	SetError(msg string)
 
-	Required(name string, val interface{}, msg ...interface{})
+	Required(name string, val bool, msg ...interface{})
 	NotEmptyString(name string, val string, msg ...interface{})
 	NotEmptyInt(name string, val int, msg ...interface{})
 	NotEmptyInt64(name string, val int64, msg ...interface{})
