@@ -99,12 +99,12 @@ func (v *validator) setErr(msg string, customMsg []interface{}) {
 	}
 }
 
-func (v *validator) Required(name string, val interface{}, msg ...interface{}) {
+func (v *validator) Required(name string, val bool, msg ...interface{}) {
 	if v.isError {
 		return
 	}
 
-	if val == nil {
+	if val {
 		v.setErr(fmt.Sprintf("%s is required", name), msg)
 	}
 }
