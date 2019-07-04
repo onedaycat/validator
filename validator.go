@@ -10,7 +10,7 @@ import (
 
 var (
 	emptyStr          = ""
-	emailPatern       = regexp.MustCompile("^[A-Z0-9._%-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}$")
+	emailPatern       = regexp.MustCompile("^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$")
 	dateiso8601Patern = regexp.MustCompile("^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})(Z|([+\\-])\\d{2}(:?\\d{2})?)$")
 )
 
@@ -102,108 +102,180 @@ func (v *validator) setErr(msg string, customMsg []interface{}) {
 }
 
 func (v *validator) Required(name string, val Pointer, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val == nil {
 		v.setErr(fmt.Sprintf("%s is required", name), msg)
 	}
 }
 
 func (v *validator) NotEmptyString(name string, val string, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val == emptyStr {
 		v.setErr(fmt.Sprintf("%s must not empty", name), msg)
 	}
 }
 
 func (v *validator) NotEmptyInt(name string, val int, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val == 0 {
 		v.setErr(fmt.Sprintf("%s must not 0", name), msg)
 	}
 }
 
 func (v *validator) NotEmptyInt64(name string, val int64, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val == 0 {
 		v.setErr(fmt.Sprintf("%s must not 0", name), msg)
 	}
 }
 
 func (v *validator) NotEmptyFloat64(name string, val float64, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val == 0 {
 		v.setErr(fmt.Sprintf("%s must not 0", name), msg)
 	}
 }
 
 func (v *validator) NotEmptyBool(name string, val bool, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if !val {
 		v.setErr(fmt.Sprintf("%s must not be false", name), msg)
 	}
 }
 
 func (v *validator) Confirm(name string, val interface{}, confirmName string, confirmValue interface{}, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val != confirmValue {
 		v.setErr(fmt.Sprintf("%s value must equal to %s", name, confirmName), msg)
 	}
 }
 
 func (v *validator) MaxInt(name string, val int, max int, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val > max {
 		v.setErr(fmt.Sprintf("%s must not more than %d", name, max), msg)
 	}
 }
 
 func (v *validator) MaxInt64(name string, val int64, max int64, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val > max {
 		v.setErr(fmt.Sprintf("%s must not more than %d", name, max), msg)
 	}
 }
 
 func (v *validator) MaxFloat64(name string, val float64, max float64, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val > max {
 		v.setErr(fmt.Sprintf("%s must not more than %v", name, max), msg)
 	}
 }
 
 func (v *validator) MaxString(name string, val string, max int, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if utf8.RuneCountInString(val) > max {
 		v.setErr(fmt.Sprintf("%s must not more than %d characters", name, max), msg)
 	}
 }
 
 func (v *validator) MinInt(name string, val int, min int, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val > min {
 		v.setErr(fmt.Sprintf("%s must not less than %d", name, min), msg)
 	}
 }
 
 func (v *validator) MinInt64(name string, val int64, min int64, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val > min {
 		v.setErr(fmt.Sprintf("%s must not less than %d", name, min), msg)
 	}
 }
 
 func (v *validator) MinFloat64(name string, val float64, min float64, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val > min {
 		v.setErr(fmt.Sprintf("%s must not less than %v", name, min), msg)
 	}
 }
 
 func (v *validator) MinString(name string, val string, min int, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if utf8.RuneCountInString(val) < min {
 		v.setErr(fmt.Sprintf("%s must not more than %d characters", name, min), msg)
 	}
 }
 
 func (v *validator) EqualString(name string, val string, size int, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if utf8.RuneCountInString(val) != size {
 		v.setErr(fmt.Sprintf("%s must equal %d characters", name, size), msg)
 	}
 }
 
 func (v *validator) EqualInt(name string, val int, equal int, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val != equal {
 		v.setErr(fmt.Sprintf("%s must equal %d", name, equal), msg)
 	}
 }
 
 func (v *validator) RangeInt(name string, val int, min, max int, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val >= min && val <= max {
 		return
 	}
@@ -212,6 +284,10 @@ func (v *validator) RangeInt(name string, val int, min, max int, msg ...interfac
 }
 
 func (v *validator) RangeString(name string, val string, min, max int, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	steLen := utf8.RuneCountInString(val)
 	if steLen >= min && steLen <= max {
 		return
@@ -221,6 +297,10 @@ func (v *validator) RangeString(name string, val string, min, max int, msg ...in
 }
 
 func (v *validator) RangeInt64(name string, val int64, min, max int64, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val >= min && val <= max {
 		return
 	}
@@ -229,6 +309,10 @@ func (v *validator) RangeInt64(name string, val int64, min, max int64, msg ...in
 }
 
 func (v *validator) RangeFloat64(name string, val float64, min, max float64, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val >= min && val <= max {
 		return
 	}
@@ -237,6 +321,10 @@ func (v *validator) RangeFloat64(name string, val float64, min, max float64, msg
 }
 
 func (v *validator) InString(name string, val string, list []string, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	for _, k := range list {
 		if k == val {
 			return
@@ -247,6 +335,10 @@ func (v *validator) InString(name string, val string, list []string, msg ...inte
 }
 
 func (v *validator) InInt(name string, val int, list []int, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	for _, k := range list {
 		if k == val {
 			return
@@ -257,6 +349,10 @@ func (v *validator) InInt(name string, val int, list []int, msg ...interface{}) 
 }
 
 func (v *validator) InInt64(name string, val int64, list []int64, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	for _, k := range list {
 		if k == val {
 			return
@@ -267,6 +363,10 @@ func (v *validator) InInt64(name string, val int64, list []int64, msg ...interfa
 }
 
 func (v *validator) InFloat64(name string, val float64, list []float64, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	for _, k := range list {
 		if k == val {
 			return
@@ -276,7 +376,11 @@ func (v *validator) InFloat64(name string, val float64, list []float64, msg ...i
 	v.setErr(fmt.Sprintf("%s must be in %v", name, list), msg)
 }
 
-func (v *validator) Email(val string, name string, msg ...interface{}) {
+func (v *validator) Email(name string, val string, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val == emptyStr {
 		v.setErr(fmt.Sprintf("%s must be email format", name), msg)
 		return
@@ -287,7 +391,11 @@ func (v *validator) Email(val string, name string, msg ...interface{}) {
 	}
 }
 
-func (v *validator) ISO8601DataTime(val string, name string, msg ...interface{}) {
+func (v *validator) ISO8601DataTime(name string, val string, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
 	if val == emptyStr {
 		v.setErr(fmt.Sprintf("%s must be iso8601 date time format", name), msg)
 	}
