@@ -19,8 +19,6 @@ type ValidateError struct {
 	Err  error
 }
 
-type Pointer interface{}
-
 //go:generate mockery -name Validator
 type Validator interface {
 	IsValid() bool
@@ -29,7 +27,7 @@ type Validator interface {
 	Wrap(errors.Error) errors.Error
 	SetError(msg string)
 
-	Required(name string, val Pointer, msg ...interface{})
+	Required(name string, val interface{}, msg ...interface{})
 	NotEmptyString(name string, val string, msg ...interface{})
 	NotEmptyInt(name string, val int, msg ...interface{})
 	NotEmptyInt64(name string, val int64, msg ...interface{})
@@ -101,7 +99,7 @@ func (v *validator) setErr(msg string, customMsg []interface{}) {
 	}
 }
 
-func (v *validator) Required(name string, val Pointer, msg ...interface{}) {
+func (v *validator) Required(name string, val interface{}, msg ...interface{}) {
 	if v.isError {
 		return
 	}
