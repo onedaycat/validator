@@ -53,6 +53,7 @@ type Validator interface {
 	InInt64(name string, val int64, list []int64, msg ...interface{})
 	InFloat64(name string, val float64, list []float64, msg ...interface{})
 	Email(name string, val string, msg ...interface{})
+	EmptyOrEmail(name string, val string, msg ...interface{})
 	ISO8601DataTime(name string, val string, msg ...interface{})
 }
 
@@ -381,6 +382,20 @@ func (v *validator) Email(name string, val string, msg ...interface{}) {
 
 	if val == emptyStr {
 		v.setErr(fmt.Sprintf("%s must be email format", name), msg)
+		return
+	}
+
+	if !emailPatern.MatchString(val) {
+		v.setErr(fmt.Sprintf("%s must be email format", name), msg)
+	}
+}
+
+func (v *validator) EmptyOrEmail(name string, val string, msg ...interface{}) {
+	if v.isError {
+		return
+	}
+
+	if val == emptyStr {
 		return
 	}
 
